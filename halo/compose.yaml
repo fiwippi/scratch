@@ -1,0 +1,9 @@
+services:
+  halo:
+    image: ghcr.io/fiwippi/halo:latest
+    command: -config /config.toml
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./data:/data
+      - ./config.toml/:/config.toml

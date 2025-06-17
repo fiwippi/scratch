@@ -1,0 +1,14 @@
+{{if .Tags}}
+<div style="display: grid; grid-template-columns: 9fr 1fr; row-gap: 5px; font-size: 17px;">
+  {{range $i, $name := .Tags}}
+  <!-- Col. 1 -->
+  <p style="grid-row: {{inc $i}}; grid-column: 1; margin: auto;">{{$name}}</p>
+  <!-- Col. 2 -->
+  <button
+    style="grid-row: {{inc $i}}; grid-column: 2; width: fit-content; height: fit-content; margin: auto 0 auto auto"
+    hx-swap="none"
+    hx-delete="/frag/images/{{.ImageID}}/tags/{{$name}}"
+    hx-trigger="click">x</button>
+  {{end}}
+</div>
+{{end}}

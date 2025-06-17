@@ -1,0 +1,7 @@
+<label for="delete-tag-select">Delete tag:</label>
+<select id="delete-tag-select" name="tag" hx-delete="/frag/images/{{.ID}}/tags" hx-trigger="change">
+  <option value="">-- Select a tag</option>
+  {{range .Tags}}
+  <option value="{{.}}">{{.}}</option>
+  {{end}}
+</select>

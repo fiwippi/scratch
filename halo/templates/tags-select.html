@@ -1,0 +1,8 @@
+<label for="filter-select">Filter by:</label>
+<select id="filter-select" name="filter" hx-post="/frag/filter" hx-trigger="change">
+  <option value="">-- Select a tag</option>
+  {{range .}}
+  <option value="{{.}}">{{.}}</option>
+  {{end}}
+</select>
+

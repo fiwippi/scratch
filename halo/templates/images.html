@@ -1,0 +1,14 @@
+{{range $id := .}}
+<div id="img-{{$id}}" style="display: inline-block">
+<img
+  src="/images/{{$id}}?thumbnail=true"
+  onclick="document.getElementById('img-dialog-{{$id}}').showModal();" />
+<dialog
+  closedby="any"
+  id="img-dialog-{{$id}}"
+  hx-swap="innerHTML"
+  hx-get="/frag/images/{{$id}}/dialog"
+  hx-trigger="intersect once">
+</dialog>
+</div>
+{{end}}

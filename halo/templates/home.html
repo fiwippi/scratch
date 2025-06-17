@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Halo</title>
+    <script src="/assets/htmx.min.js"></script>
+    <style>
+    	html {
+    		font-size: 18px;
+    	}
+
+    	body {
+    		margin: 0;
+    		font-family: system-ui, sans-serif;
+    		line-height: 1.5;
+    		background-color: hsl(0, 0%, 100%);
+    		color: hsl(0, 0%, 24%);
+    	}
+
+      hgroup {
+        text-align: left;
+        padding-left: 10px;
+        padding-bottom: 1px;
+        border-left: 10px solid hsl(0, 0%, 24%);
+        border-bottom: 2px solid hsl(0, 0%, 24%);
+      }
+
+      hgroup h2, hgroup h3, hgroup h4 {
+        margin-bottom: 0;
+      }
+
+    	a {
+    		color: inherit;
+    		text-decoration: none;
+    		border-bottom: 2px solid blue;
+    		font-weight: 500;
+    	}
+
+     	a:visited {
+    		border-bottom-color: purple;
+    	}
+
+    	a:hover {
+    		background-color: hsl(60, 100%, 85%);
+    		color: oklch(40% 0 0);
+    		border-bottom-color: transparent;
+    	}
+
+    	ul {
+    		padding-inline-start: 2rem;
+    	}
+
+    	hr {
+    		margin-block: 2.6rem;
+    		width: 50%;
+    	}
+
+      select, button {
+        font-size: 15px;
+        margin-left: 5px;
+      }
+
+      ::backdrop {
+        background: gray;
+        opacity: 0.7;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 2% min(31em, 20%) 10fr;
+        margin-top: 1em;
+      }
+
+      .tag-col {
+        grid-column: 2/3;
+        padding-inline: 1rem;
+      }
+
+      .img-col {
+        grid-column: 3/4;
+        padding-inline: 1rem;
+      }
+
+      @media (max-width: 900px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+
+        .tag-col, .img-col {
+          grid-column: auto;
+        }
+
+        .img-col {
+          margin-top: 10px;
+        }
+      }
+    </style>
+    <script>
+      window.addEventListener("DOMContentLoaded", () => {
+        document.body.addEventListener('htmx:responseError',
+          e => {
+            const status = e.detail.xhr.status;
+            const statusText = e.detail.xhr.statusText;
+            const responseText = e.detail.xhr.responseText;
+            if (responseText === "") {
+              alert(`An error occurred, please refresh the page! (${status}: ${statusText})`)
+            } else {
+              alert(`An error occurred, please refresh the page! (${status}: ${statusText}, ${responseText})`)
+            }
+          });
+      });
+    </script>
+  </head>
+  <body>
+    <div class="grid">
+      <!-- Tags --> 
+      <div class="tag-col">
+        <!-- We need to place the form outside the <p>, otherwise it auto-closes -->
+        <form
+          id="upload-form"
+          style="display: none;"
+          hx-post="/frag/images"
+          hx-encoding="multipart/form-data"
+          hx-target="#gallery"
+          hx-swap="beforeend"></form>
+        {{range .Tags}}
+        <input type="hidden" form="upload-form" name="tag" value="{{.}}">
+        {{end}}
+        <input
+          multiple
+          type="file"
+          name="upload"
+          id="upload"
+          form="upload-form"
+          style="display: none;"
+          onchange="if (this.files.length > 0) {
+            document.getElementById('upload-form').requestSubmit()
+          }">
+        <hgroup><h3>Halo</h3></hgroup>
+        <p>
+          <!-- Add Image -->
+          <button
+            type="button"
+            style="margin-left: 0;"
+            onclick="document.getElementById('upload').click()">Add Image</button>
+          <!-- Add Tag -->
+          <button
+            hx-swap="none"
+            hx-prompt="Enter name"
+            hx-post="/frag/tags"
+            hx-trigger="click">Add Tag</button>
+          <!-- Delete Tag -->
+          <button
+            hx-swap="none"
+            hx-prompt="Enter name"
+            hx-delete="/frag/tags"
+            hx-trigger="click">Delete Tag</button>
+        </p>
+        <p hx-get="/frag/tags" hx-trigger="load,filtersUpdated from:body" swap="innerHTML"></p>
+        <div>
+          {{if .Tags}}
+          <div style="display: grid; grid-template-columns: 9fr 1fr 1fr; row-gap: 5px; font-size: 17px;">
+            {{range $i, $name := .Tags}}
+            <!-- Col. 1 -->
+            <p style="grid-row: {{inc $i}}; grid-column: 1; margin: auto;">{{$name}}</p>
+            <!-- Col. 2 -->
+            <button
+              style="grid-row: {{inc $i}}; grid-column: 2; width: fit-content; height: fit-content; margin: auto 0 auto auto"
+              hx-prompt="Enter name"
+              hx-swap="none"
+              hx-patch="/frag/tags/{{$name}}"
+              hx-trigger="click">r</button>
+            <!-- Col. 3 -->
+            <button
+              style="grid-row: {{inc $i}}; grid-column: 3; width: fit-content; height: fit-content; margin: auto 0 auto auto"
+              name="filter"
+              value="{{$name}}"
+              hx-swap="none"
+              hx-delete="/frag/filter"
+              hx-trigger="click">x</button>
+            {{end}}
+          </div>
+          {{end}}
+        </div>
+      </div>
+      <!-- Images --> 
+      <div class="img-col" id="gallery">
+        {{template "images.html" .Images}}
+      </div>
+    </div>
+  </body>
+</html>

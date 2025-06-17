@@ -1,0 +1,7 @@
+<label for="add-tag-select">Add tag:</label>
+<select id="add-tag-select" name="tag" hx-post="/frag/images/{{.ID}}/tags" hx-trigger="change">
+  <option value="">-- Select a tag</option>
+  {{range .Tags}}
+  <option value="{{.}}">{{.}}</option>
+  {{end}}
+</select>

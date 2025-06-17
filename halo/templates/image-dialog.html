@@ -1,0 +1,23 @@
+<img
+  src="/images/{{.}}"
+  style="max-width: 900px; max-height: 900px" />
+<div>
+  <b><p
+    id="image-tags-{{.}}"
+    hx-swap="innerHTML"
+    hx-get="/frag/images/{{.}}/tags"
+    hx-trigger="load,imageTagsUpdated from:body">
+  </p></b>
+</div>
+<p
+  hx-swap="innerHTML"
+  hx-get="/frag/images/{{.}}/tags/unassociated"
+  hx-trigger="load,imageTagsUpdated from:body">
+</p>
+<p
+  hx-swap="innerHTML"
+  hx-get="/frag/images/{{.}}/tags/associated"
+  hx-trigger="load,imageTagsUpdated from:body">
+</p>
+<button hx-delete="/frag/images/{{.}}" hx-swap="delete" hx-target="#img-{{.}}">Delete Image</button>
+<button onclick="document.getElementById('img-dialog-{{.}}').close();">Close</button>
