@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
+    <title>Boids</title>
+    <style>
+        canvas {
+            height: 800px;
+            width: 800px;
+            display: block;
+            border: 1px solid black;
+        }
+
+        p, label {
+          font: 1rem sans-serif;
+        }
+
+        input {
+          margin: 0.4rem;
+        }
+
+        .container {
+          display: flex;
+          flex-direction: row;
+          justify-content: flex-start;
+          column-gap: 25px;
+        }
+    </style>    
+  </head>
+  <body>
+    <div class="container">
+      <div>
+        <div>
+          <input type="checkbox" id="neighbourhood" />
+          <label for="neighbourhood">Show Neighbourhood</label>
+        </div>
+        <div>
+          <input type="checkbox" id="velocity" />
+          <label for="velocity">Show Direction</label>
+        </div>
+        <div>
+          <input id="area_range" type="range" min="5" max="300" oninput="area_amount.value=area_range.value" />
+          <input id="area_amount" type="number" min="5" max="300" oninput="area_range.value=area_amount.value" />
+          <label id="area_label" for="area_range">Neighbourhood Area</label>
+        </div>
+        <div>
+          <input id="boids_range" type="range" min="2" max="1536" oninput="boids_amount.value=boids_range.value" />
+          <input id="boids_amount" type="number" min="2" max="1536" oninput="boids_range.value=boids_amount.value" />
+          <label id="boids_label" for="boids_range">Boids</label>
+        </div>
+      </div>
+      <canvas id="boids-canvas"></canvas>
+    </div>
+
+    <script type="module">
+        import init, { Flock } from './lib_boids.js';
+
+        // Initialise WASM (before we begin manipulating WASM-related code)
+        await init();
+
+        // Constants + Initial values
+        const width = 1000;
+        const height = 1000;
+        let neighbourhood_area = 64.0;
+        let boids_amount = 1024;
+
+        // Show direction
+        let draw_velocity = document.querySelector('#velocity').checked;
+        document.querySelector('#velocity').addEventListener("change",
+                (e) => { draw_velocity = e.target.checked });
+
+        // Show neighbourhood area
+        let draw_neighbourhood = document.querySelector('#neighbourhood').checked;
+        document.querySelector('#neighbourhood').addEventListener("change",
+                (e) => { draw_neighbourhood = e.target.checked });
+
+        // Neighbourhood area of boids
+        document.querySelector('#area_range').value = neighbourhood_area
+        document.querySelector('#area_amount').value = neighbourhood_area
+        document.querySelector('#area_range').addEventListener("input", (e) => {
+          neighbourhood_area = e.target.value
+        });
+        document.querySelector('#area_amount').addEventListener("input", (e) => {
+          neighbourhood_area = e.target.value
+        });
+
+        // Number of boids
+        let f = new Flock(width, height, boids_amount);
+        document.querySelector('#boids_range').value = boids_amount
+        document.querySelector('#boids_amount').value = boids_amount
+        document.querySelector('#boids_range').addEventListener("input", (e) => {
+          boids_amount = e.target.value;
+          f.change_size(boids_amount);
+        });
+        document.querySelector('#boids_amount').addEventListener("input", (e) => {
+          boids_amount = e.target.value;
+          f.change_size(boids_amount);
+        });
+
+        // Set up the canvas including its logical width and height
+        const canvas = document.getElementById('boids-canvas');
+        canvas.width = width;
+        canvas.height = height;
+
+        // Retrieve the canvas's drawing context
+        const ctx = canvas.getContext('2d');
+
+        // Define and run the rendering loop
+        const renderLoop = (currentTime) => {
+          f.draw(ctx, currentTime,
+                  draw_velocity, draw_neighbourhood, neighbourhood_area);
+          requestAnimationFrame(renderLoop);
+        }
+        requestAnimationFrame(renderLoop);        
+    </script>
+  </body>
+</html>

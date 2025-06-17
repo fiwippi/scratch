@@ -1,0 +1,22 @@
+[package]
+name = "lib-boids"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+rand = "0.8.5"
+getrandom = { version = "0.2.10", features = ["js"] } # Required for wasm-unknown compilation
+wasm-bindgen = "0.2.87"
+
+[dependencies.web-sys]
+version = "0.3.6"
+features = [
+  'CanvasRenderingContext2d',
+  'Document',
+  'Element',
+  'HtmlCanvasElement',
+  'Window',
+]
