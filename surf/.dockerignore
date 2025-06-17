@@ -1,0 +1,5 @@
+.env
+.env.sample
+.idea
+.github
+bin/

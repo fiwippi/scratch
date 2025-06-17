@@ -1,0 +1,12 @@
+services:
+  proxy:
+    image: "ghcr.io/pufferffish/wireproxy:latest"
+    restart: always
+    volumes:
+      - ./wgcf-profile.toml:/etc/wireproxy/config
+  
+  surf:
+    image: "ghcr.io/fiwippi/surf:latest"
+    restart: always
+    env_file:
+      - .env
