@@ -71,6 +71,7 @@ func NewClient(conf Config, scopes ...string) (*spotify.Client, error) {
 			return
 		}
 		client <- spotify.New(auth.Client(r.Context(), token), spotify.WithRetry(true))
+		w.Write([]byte("Authentication successful, please return to the CLI."))
 	})
 	l, err := net.Listen("tcp", net.JoinHostPort("localhost", port))
 	if err != nil {

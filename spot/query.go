@@ -73,3 +73,25 @@ func GetSavedTracks(ctx context.Context, c *spotify.Client) ([]spotify.SavedTrac
 		offset += len(t.Tracks)
 	}
 }
+
+func CreateNewPlaylist(
+	ctx context.Context,
+	c *spotify.Client,
+	trackIDs []spotify.ID,
+) (spotify.ID, error) {
+	user, err := c.CurrentUser(ctx)
+	if err != nil {
+		return "", fmt.Errorf("current user: %w", err)
+	}
+	pl, err := c.CreatePlaylistForUser(ctx, user.ID, "shuffled", "", true, false)
+	if err != nil {
+		return "", fmt.Errorf("create playlist: %w", err)
+	}
+	for chunk := range slices.Chunk(trackIDs, 100) {
+		_, err = c.AddTracksToPlaylist(ctx, pl.ID, chunk...)
+		if err != nil {
+			return "", fmt.Errorf("add tracks: %w", err)
+		}
+	}
+	return pl.ID, nil
+}
