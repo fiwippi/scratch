@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/nfnt/resize"
 	"github.com/oklog/ulid/v2"
 	_ "modernc.org/sqlite"
 )
@@ -115,23 +114,9 @@ func (s *store) AddImages(images []newImageData, tags ...string) ([]ulid.ULID, e
 	for i, imgData := range images {
 		ids[i] = ulid.Make()
 
-		bounds := imgData.img.Bounds()
-		w, h := uint(bounds.Dx()), uint(bounds.Dy())
-
 		var buf bytes.Buffer
-		if w <= 900 && h <= 900 {
-			if err := jpeg.Encode(&buf, imgData.img, nil); err != nil {
-				return nil, fmt.Errorf("encode img %d: %w", i+1, err)
-			}
-		} else {
-			if w > h {
-				w, h = min(1000, w), 0
-			} else {
-				w, h = 0, min(1000, h)
-			}
-			if err := jpeg.Encode(&buf, resize.Resize(w, h, imgData.img, resize.Lanczos3), nil); err != nil {
-				return nil, fmt.Errorf("encode img %d: %w", i+1, err)
-			}
+		if err := jpeg.Encode(&buf, imgData.img, nil); err != nil {
+			return nil, fmt.Errorf("encode img %d: %w", i+1, err)
 		}
 		data[i] = buf.Bytes()
 	}

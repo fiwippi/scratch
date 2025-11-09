@@ -116,7 +116,7 @@ func extractDateTime(file io.Reader) (time.Time, error) {
 }
 
 func (fc *fragmentController) UploadImage(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseMultipartForm(50 << 20) // Only first 50 MB are buffered in memory
+	err := r.ParseMultipartForm(125 << 20) // Only first 125 MB are buffered in memory
 	if err != nil {
 		api.Error(w, fmt.Errorf("parse form: %w", err))
 		w.WriteHeader(http.StatusBadRequest)
@@ -136,8 +136,8 @@ func (fc *fragmentController) UploadImage(w http.ResponseWriter, r *http.Request
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	if len(files) > 25 {
-		api.Error(w, fmt.Errorf(">25 images specified"))
+	if len(files) > 75 {
+		api.Error(w, fmt.Errorf(">75 images specified"))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
