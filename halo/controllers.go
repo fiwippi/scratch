@@ -16,10 +16,5 @@ var templatesFs embed.FS
 var tmpl *template.Template
 
 func init() {
-	funcs := template.FuncMap{
-		"inc": func(i int) int {
-			return i + 1
-		},
-	}
-	tmpl = template.Must(template.New("").Funcs(funcs).ParseFS(templatesFs, "templates/*"))
+	tmpl = template.Must(template.New("").ParseFS(templatesFs, "templates/*"))
 }

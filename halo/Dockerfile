@@ -11,7 +11,7 @@ RUN CGO_ENABLED=1 go build -o ./bin/halo cmd/*.go
 # -- Run
 FROM alpine:latest
 
-RUN apk add libheif-dev libde265-dev
+RUN apk add exiftool libheif-dev libde265-dev
 
 COPY --from=builder /app/bin/halo /bin/halo
 

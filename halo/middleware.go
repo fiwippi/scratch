@@ -6,55 +6,56 @@ import (
 	"net/http"
 
 	"github.com/fiwippi/halo/internal/api"
-	"github.com/fiwippi/halo/internal/stringutil"
 )
 
 type ctxKey uint
 
 const (
-	tagsFilterCtxKey ctxKey = iota
+	tagCtxKey ctxKey = iota
 )
 
-func getFilters(r *http.Request) []string {
-	return r.Context().Value(tagsFilterCtxKey).([]string)
+func getTag(r *http.Request) string {
+	return r.Context().Value(tagCtxKey).(string)
 }
 
-const tagsFilterCookie = "tags-filter"
+const tagCookie = "tag-cookie"
 
-func handleTagFilters(s *store) func(next http.Handler) http.Handler {
+func handleTagQuery(s *store) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			var (
-				tags []string
-				err  error
+				tag string
+				err error
 			)
 
 			if r.URL.Path == "/" {
 				// We only set filters if we're on the index route since
 				// they aren't specified for other routes, meaning they
 				// get overriden to be empty
-				tags = r.URL.Query()["tag"]
-				tags = stringutil.Deduplicate(tags...)
-				tags = stringutil.Filter(tags, func(tag string) bool {
-					return s.HasTag(tag)
-				})
-				if err := api.StoreCookieList(w, tagsFilterCookie, tags); err != nil {
-					api.Error(w, fmt.Errorf("store tag filters: %w", err))
+				tags := r.URL.Query()["tag"]
+
+				// We only support querying for one tag
+				if len(tags) > 0 {
+					tag = tags[0]
+				}
+				// Ignore invalid tags
+				if !s.HasTag(tag) {
+					tag = ""
+				}
+
+				if err := api.StoreCookie(w, tagCookie, tag); err != nil {
+					api.Error(w, fmt.Errorf("store tag: %w", err))
 					return
 				}
 			} else {
-				tags, err = api.LoadCookieList(r, tagsFilterCookie)
+				tag, err = api.LoadCookie(r, tagCookie)
 				if err != nil {
-					api.Error(w, fmt.Errorf("load tag filters: %w", err))
+					api.Error(w, fmt.Errorf("load tag: %w", err))
 					return
 				}
 			}
 
-			// We want to avoid failed assertions even if no tags exist
-			if tags == nil {
-				tags = make([]string, 0)
-			}
-			ctx := context.WithValue(r.Context(), tagsFilterCtxKey, tags)
+			ctx := context.WithValue(r.Context(), tagCtxKey, tag)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

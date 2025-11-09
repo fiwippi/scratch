@@ -1,0 +1,9 @@
+{{if .}}
+<ul style="list-style-type: none;">
+  {{range .}}
+  <li><a href="/?tag={{.}}">{{.}}</a></li>
+  {{end}}
+</ul>
+{{else}}
+No tags exist!
+{{end}}

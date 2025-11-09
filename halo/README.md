@@ -1,6 +1,14 @@
 ## halo
 
-Halo is a simple image tagger.
+Halo is a simple image tagger for Exif images.
+
+### Install
+
+Halo depends on [exiftool](https://linux.die.net/man/1/exiftool) to work, you can install it via:
+
+1. `sudo apt install exiftool`
+
+2. `brew install exiftool`
 
 ### FAQ
 
@@ -10,13 +18,8 @@ Yup, [here](config.toml).
 
 **Q: How do I extract all uploaded photos?**
 
-Note:
-
-- All images are JPEG
-- ULIDs are encoded as HEX vs. Base32 which is how the library encodes it
-
 ```console
 > mkdir -p output
 
-> sqlite3 store.db "SELECT writefile(printf('./output/%s.jpeg', hex(id)), data) FROM originals ORDER BY id ASC;"
+> sqlite3 store.db "SELECT writefile(printf('./output/%s.jpeg', timestamp), data) FROM photos ORDER BY id ASC;"
 ```

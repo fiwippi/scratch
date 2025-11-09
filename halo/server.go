@@ -30,11 +30,11 @@ func NewServer(conf Config) (*Server, error) {
 	}
 	_, err := os.Stat(conf.DataDir)
 	if err != nil {
-		return nil, fmt.Errorf("data dir does not exist: %w", err)
+		return nil, fmt.Errorf("stat data dir: %w", err)
 	}
 	store, err := newStore(conf.DataDir + "store.db")
 	if err != nil {
-		return nil, fmt.Errorf("create store: %w", err)
+		return nil, fmt.Errorf("new store: %w", err)
 	}
 
 	mux := http.NewServeMux()
@@ -46,7 +46,7 @@ func NewServer(conf Config) (*Server, error) {
 		store:  store,
 		mux: api.ChainMiddleware(
 			mux,
-			handleTagFilters(store),
+			handleTagQuery(store),
 			api.BasicAuth(conf.Credentials, "Halo"),
 			api.HttpLogger(),
 		),

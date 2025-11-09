@@ -30,10 +30,10 @@ func run(configPath string) error {
 
 	s, err := halo.NewServer(config)
 	if err != nil {
-		return fmt.Errorf("create server: %s", err)
+		return fmt.Errorf("create server: %w", err)
 	}
 	if err := s.ListenAndServe(); err != nil {
-		return fmt.Errorf("listen and serve: %s", err)
+		return fmt.Errorf("listen and serve: %w", err)
 	}
 
 	return nil

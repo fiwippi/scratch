@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
-    <title>Halo</title>
+    <title>Halo{{if .Tag}} ({{.Tag}}){{end}}</title>
     <script src="/assets/htmx.min.js"></script>
     <style>
     	html {
@@ -114,7 +114,7 @@
   </head>
   <body>
     <div class="grid">
-      <!-- Tags --> 
+      <!-- Tags -->
       <div class="tag-col">
         <!-- We need to place the form outside the <p>, otherwise it auto-closes -->
         <form
@@ -124,8 +124,8 @@
           hx-encoding="multipart/form-data"
           hx-target="#gallery"
           hx-swap="beforeend"></form>
-        {{range .Tags}}
-        <input type="hidden" form="upload-form" name="tag" value="{{.}}">
+        {{if .Tag}}
+        <input type="hidden" form="upload-form" name="tag" value="{{.Tag}}">
         {{end}}
         <input
           multiple
@@ -137,15 +137,18 @@
           onchange="if (this.files.length > 0) {
             document.getElementById('upload-form').requestSubmit()
           }">
-        <hgroup><h3>Halo</h3></hgroup>
+        <hgroup><h3>Halo{{if .Tag}} ({{.Tag}}){{end}}</h3></hgroup>
         <p>
           <!-- Add Image -->
+          {{if .Tag}}
           <button
             type="button"
             style="margin-left: 0;"
             onclick="document.getElementById('upload').click()">Add Image</button>
+          {{else}}
           <!-- Add Tag -->
           <button
+            style="margin-left: 0;"
             hx-swap="none"
             hx-prompt="Enter name"
             hx-post="/frag/tags"
@@ -156,33 +159,9 @@
             hx-prompt="Enter name"
             hx-delete="/frag/tags"
             hx-trigger="click">Delete Tag</button>
-        </p>
-        <p hx-get="/frag/tags" hx-trigger="load,filtersUpdated from:body" swap="innerHTML"></p>
-        <div>
-          {{if .Tags}}
-          <div style="display: grid; grid-template-columns: 9fr 1fr 1fr; row-gap: 5px; font-size: 17px;">
-            {{range $i, $name := .Tags}}
-            <!-- Col. 1 -->
-            <p style="grid-row: {{inc $i}}; grid-column: 1; margin: auto;">{{$name}}</p>
-            <!-- Col. 2 -->
-            <button
-              style="grid-row: {{inc $i}}; grid-column: 2; width: fit-content; height: fit-content; margin: auto 0 auto auto"
-              hx-prompt="Enter name"
-              hx-swap="none"
-              hx-patch="/frag/tags/{{$name}}"
-              hx-trigger="click">r</button>
-            <!-- Col. 3 -->
-            <button
-              style="grid-row: {{inc $i}}; grid-column: 3; width: fit-content; height: fit-content; margin: auto 0 auto auto"
-              name="filter"
-              value="{{$name}}"
-              hx-swap="none"
-              hx-delete="/frag/filter"
-              hx-trigger="click">x</button>
-            {{end}}
-          </div>
           {{end}}
-        </div>
+        </p>
+        <p hx-get="/frag/tags" hx-trigger="load,tagsUpdated from:body" swap="innerHTML"></p>
       </div>
       <!-- Images --> 
       <div class="img-col" id="gallery">

@@ -1,7 +1,8 @@
 {{range $id := .}}
-<div id="img-{{$id}}" style="display: inline-block">
+<div id="img-{{$id}}">
 <img
-  src="/images/{{$id}}?thumbnail=true"
+  src="/images/{{$id}}"
+  style="max-width: 700px"
   onclick="document.getElementById('img-dialog-{{$id}}').showModal();" />
 <dialog
   closedby="any"

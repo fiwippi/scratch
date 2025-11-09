@@ -35,8 +35,8 @@ func (sc *staticController) GetHome(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tags := getFilters(r)
-	images, err := sc.store.GetImageIDs(tags...)
+	tag := getTag(r)
+	images, err := sc.store.GetImageIDsWithTag(tag)
 	if err != nil {
 		api.Error(w, fmt.Errorf("get images: %w", err))
 		w.WriteHeader(http.StatusBadRequest)
@@ -44,7 +44,7 @@ func (sc *staticController) GetHome(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = tmpl.ExecuteTemplate(w, "home.html", map[string]any{
-		"Tags":   tags,
+		"Tag":    tag,
 		"Images": images,
 	})
 	if err != nil {
@@ -78,8 +78,6 @@ func (sc *staticController) GetFavicon(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// curl "http://localhost:9090/images/{id}" -s > dl-cat.jpeg
-// curl "http://localhost:9090/images/{id}?thumbnail=true" -s > dl-thumbnail-cat.jpeg
 func (sc *staticController) GetImage(w http.ResponseWriter, r *http.Request) {
 	idString := r.PathValue("id")
 	id, err := ulid.Parse(idString)
@@ -89,21 +87,11 @@ func (sc *staticController) GetImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var data []byte
-	if r.URL.Query().Get("thumbnail") == "true" {
-		data, err = sc.store.GetThumbnailImageBytes(id)
-		if err != nil {
-			api.Error(w, fmt.Errorf("get thumbnail: %w", err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-	} else {
-		data, err = sc.store.GetOriginalImageBytes(id)
-		if err != nil {
-			api.Error(w, fmt.Errorf("get original: %w", err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+	data, err := sc.store.GetImageData(id)
+	if err != nil {
+		api.Error(w, fmt.Errorf("get original: %w", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	w.Header().Set("Content-Type", "image/jpeg")
