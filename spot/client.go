@@ -26,10 +26,9 @@ func LoadConfig(path string) (Config, error) {
 		return Config{}, err
 	}
 
-	isLocalhost := strings.Contains(conf.RedirectURL, "localhost")
 	is127 := strings.Contains(conf.RedirectURL, "127.0.0.1")
-	if !isLocalhost && !is127 {
-		return Config{}, fmt.Errorf("redirect_url must be to localhost")
+	if !is127 {
+		return Config{}, fmt.Errorf("redirect_url host must be 127.0.0.1")
 	}
 	if conf.SpotifyID == "" {
 		return Config{}, fmt.Errorf("spotify_id is nil")
@@ -75,7 +74,7 @@ func NewClient(conf Config, scopes ...string) (*spotify.Client, error) {
 	})
 	l, err := net.Listen("tcp", net.JoinHostPort("localhost", port))
 	if err != nil {
-		return nil, fmt.Errorf("listener: %w", err)
+		return nil, fmt.Errorf("listen: %w", err)
 	}
 	srv := &http.Server{Handler: mux}
 	defer srv.Close()

@@ -4,9 +4,13 @@ import (
 	"cmp"
 	"context"
 	"fmt"
+	"log"
+	"math"
 	"slices"
+	"sync/atomic"
 
 	"github.com/zmb3/spotify/v2"
+	"golang.org/x/sync/errgroup"
 )
 
 func GetFollowedArtists(ctx context.Context, c *spotify.Client) ([]spotify.FullArtist, error) {
@@ -59,23 +63,55 @@ func GetUnfollowedArtists(ctx context.Context, c *spotify.Client) ([]spotify.Sim
 }
 
 func GetSavedTracks(ctx context.Context, c *spotify.Client) ([]spotify.SavedTrack, error) {
-	tracks := make([]spotify.SavedTrack, 0)
-	offset := 0
-	for {
-		t, err := c.CurrentUsersTracks(ctx, spotify.Limit(50), spotify.Offset(offset))
-		if err != nil {
-			return nil, fmt.Errorf("get user tracks: %w", err)
-		}
-		if len(t.Tracks) == 0 {
-			return tracks, nil
-		}
-		tracks = append(tracks, t.Tracks...)
-		offset += len(t.Tracks)
+	const pageSize = 50
+	trackInfo, err := c.CurrentUsersTracks(ctx, spotify.Limit(pageSize), spotify.Offset(0))
+	if err != nil {
+		return nil, fmt.Errorf("current user tracks: %w", err)
 	}
+
+	// No need to request tracks in parallel,
+	// if there are no more tracks to request
+	if trackInfo.Next == "" {
+		log.Println("downloading: 1/1")
+		return trackInfo.Tracks, nil
+	}
+
+	total := int(trackInfo.Total)
+	pages := int(math.Ceil(float64(total) / float64(pageSize)))
+	tracks := make([][]spotify.SavedTrack, pages)
+
+	g, ctx := errgroup.WithContext(ctx)
+	g.SetLimit(8)
+
+	dlCounter := atomic.Int32{}
+	dlCounter.Store(pageSize)
+	log.Printf("downloading: %d/%d\n", dlCounter.Load(), pages*pageSize)
+
+	tracks[0] = trackInfo.Tracks
+	for i := 1; i < len(tracks); i++ {
+		g.Go(func() error {
+			info, err := c.CurrentUsersTracks(ctx, spotify.Limit(pageSize), spotify.Offset(i*pageSize))
+			if err != nil {
+				return fmt.Errorf("current user tracks: %w", err)
+			}
+			tracks[i] = info.Tracks
+
+			counter := dlCounter.Add(pageSize)
+			log.Printf("downloading: %d/%d\n", counter, pages*pageSize)
+
+			return nil
+		})
+	}
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+
+	return slices.Concat(tracks...), nil
 }
 
 func CreateNewPlaylist(
 	ctx context.Context,
+	name string,
 	c *spotify.Client,
 	trackIDs []spotify.ID,
 ) (spotify.ID, error) {
@@ -83,7 +119,7 @@ func CreateNewPlaylist(
 	if err != nil {
 		return "", fmt.Errorf("current user: %w", err)
 	}
-	pl, err := c.CreatePlaylistForUser(ctx, user.ID, "shuffled", "", true, false)
+	pl, err := c.CreatePlaylistForUser(ctx, user.ID, name, "", true, false)
 	if err != nil {
 		return "", fmt.Errorf("create playlist: %w", err)
 	}

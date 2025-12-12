@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"math/rand"
 	"os"
+	"time"
 
 	"github.com/urfave/cli/v3"
 	"github.com/zmb3/spotify/v2"
@@ -32,6 +34,8 @@ func loadClient(c *cli.Command) (*spotify.Client, error) {
 }
 
 func main() {
+	log.SetFlags(0)
+
 	cmd := &cli.Command{
 		Name:  "spot",
 		Usage: "A Spotify CLI utility",
@@ -46,6 +50,28 @@ func main() {
 			{
 				Name:  "tracks",
 				Usage: "View library track information",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:  "playlist",
+						Value: "",
+						Usage: "Create playlist with tracks with specified name",
+					},
+					&cli.BoolFlag{
+						Name:  "shuffle",
+						Value: false,
+						Usage: "Shuffle tracks",
+					},
+					&cli.IntFlag{
+						Name:  "year-added",
+						Value: -1,
+						Usage: "Filter tracks by year released",
+					},
+					&cli.IntFlag{
+						Name:  "year-released",
+						Value: -1,
+						Usage: "Filter tracks by year saved to library",
+					},
+				},
 				Action: func(ctx context.Context, c *cli.Command) error {
 					client, err := loadClient(c)
 					if err != nil {
@@ -55,6 +81,50 @@ func main() {
 					if err != nil {
 						return err
 					}
+
+					if year := c.Int("year-added"); year != -1 {
+						i := 0
+						for _, track := range tracks {
+							timeAdded, err := time.Parse(spotify.TimestampLayout, track.AddedAt)
+							if err != nil {
+								return err
+							}
+							if timeAdded.Year() == year {
+								tracks[i] = track
+								i += 1
+							}
+						}
+						tracks = tracks[:i]
+					}
+					if year := c.Int("year-released"); year != -1 {
+						i := 0
+						for _, track := range tracks {
+							if track.Album.ReleaseDateTime().Year() == year {
+								tracks[i] = track
+								i += 1
+							}
+						}
+						tracks = tracks[:i]
+					}
+					if c.Bool("shuffle") {
+						// Fisher–Yates shuffle
+						for i := range tracks {
+							j := rand.Intn(i + 1)
+							tracks[i], tracks[j] = tracks[j], tracks[i]
+						}
+					}
+					if name := c.String("playlist"); name != "" {
+						trackIDs := make([]spotify.ID, len(tracks))
+						for i := range tracks {
+							trackIDs[i] = tracks[i].ID
+						}
+						plID, err := spot.CreateNewPlaylist(ctx, name, client, trackIDs)
+						if err != nil {
+							return err
+						}
+						log.Println("playlist:", name, plID)
+					}
+
 					return json.NewEncoder(os.Stdout).Encode(tracks)
 				},
 			},
@@ -92,35 +162,6 @@ func main() {
 							return json.NewEncoder(os.Stdout).Encode(artists)
 						},
 					},
-				},
-			},
-			{
-				Name:  "shuffle",
-				Usage: "Create a playlist of your shuffled library",
-				Action: func(ctx context.Context, c *cli.Command) error {
-					client, err := loadClient(c)
-					if err != nil {
-						return err
-					}
-					tracks, err := spot.GetSavedTracks(ctx, client)
-					if err != nil {
-						return err
-					}
-					trackIDs := make([]spotify.ID, len(tracks))
-					for i := range tracks {
-						trackIDs[i] = tracks[i].ID
-					}
-					// Fisher–Yates shuffle
-					for i := range trackIDs {
-						j := rand.Intn(i + 1)
-						trackIDs[i], trackIDs[j] = trackIDs[j], trackIDs[i]
-					}
-					plID, err := spot.CreateNewPlaylist(ctx, client, trackIDs)
-					if err != nil {
-						return err
-					}
-					fmt.Println("Playlist created with ID", plID)
-					return nil
 				},
 			},
 		},
